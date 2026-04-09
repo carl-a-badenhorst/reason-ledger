@@ -1,0 +1,15 @@
+---
+description: Prisma schema, DB access, and status transition discipline
+globs: prisma/**,apps/web/src/lib/db/**,apps/web/src/lib/status/**,apps/web/src/features/**/server/**
+alwaysApply: false
+---
+
+# Data and persistence
+
+- **Single workspace MVP** unless multi-workspace is explicitly in scope.
+- Schema source of truth: [prisma/schema.prisma](prisma/schema.prisma). Match relations and `onDelete` to product intent; use join tables (`ClaimEvidence`, `TensionClaim`, etc.) as modeled.
+- App DB access: singleton pattern in [apps/web/src/lib/db/client.ts](apps/web/src/lib/db/client.ts); avoid ad-hoc `new PrismaClient()` in hot paths.
+- Status values and Zod mirrors: [apps/web/src/lib/status/transition-rules.ts](apps/web/src/lib/status/transition-rules.ts). Enforce allowed transitions in server code when mutating claims, tensions, decisions, outputs.
+- **`ReviewEvent`**: append-only style logging for human/system actions on objects.
+- **`SyncRecord`**: tracks vault projection/import hashes and conflict state; unique on `(objectType, objectId)`.
+- Stale outputs: scaffold `staleStatus` / `staleReason` per [docs/change-detection.md](docs/change-detection.md) and [docs/output-generation.md](docs/output-generation.md).

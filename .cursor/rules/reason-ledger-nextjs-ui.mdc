@@ -1,0 +1,26 @@
+---
+description: Next.js App Router, UI patterns, and required routes
+globs: apps/web/src/app/**,apps/web/src/components/**,apps/web/src/features/**/components/**
+alwaysApply: false
+---
+
+# Next.js app (apps/web)
+
+## Stack
+
+Next.js App Router, TypeScript, Tailwind, shadcn/ui, Zod. Low-dependency; server components by default where appropriate.
+
+## Required routes (do not remove without product decision)
+
+`/`, `/sources`, `/sources/[id]`, `/claims`, `/claims/[id]`, `/tensions`, `/tensions/[id]`, `/decisions`, `/decisions/[id]`, `/outputs`, `/outputs/[id]`, `/review`, `/changes`, `/settings/vault-sync`.
+
+## UX stance
+
+Calm, rigorous, inspectable. **Not** chat-first or graph-first. Primary value: inbox/review, provenance panels, status, and operational outputs.
+
+## Implementation habits
+
+- Keep feature logic in `features/<domain>/` (components, server, types).
+- Validate inputs with Zod on server boundaries.
+- Preserve provenance in UI copy and data fetching (link evidence, sources, review events).
+- See [cursor-execution-brief.md](cursor-execution-brief.md) for step-by-step delivery expectations.

@@ -1,0 +1,38 @@
+---
+description: Reason Ledger product identity, anti-goals, pipeline, and phase discipline
+alwaysApply: true
+---
+
+# Reason Ledger — core
+
+## What this is
+
+Evidence-first reasoning workbench: **sources → evidence → claims → tensions → decisions → outputs**. PostgreSQL + Prisma is **canonical** for structure, provenance, statuses, and relationships. Obsidian is a **projection + bounded editable surface**, not the ontology.
+
+## Anti-goals
+
+Not a generic note app, second-brain clone, wiki generator, graph-first product, or chat-primary UX. Do not collapse object types or treat freeform markdown as the only store.
+
+## Principles
+
+- Provenance is mandatory for derived objects.
+- Keep epistemic levels explicit: source, segment, evidence, claim, tension, decision, output, review-event, sync-record.
+- Human review is first-class; do not present unreviewed model output as authoritative.
+- Preserve **raw vs derived**; never overwrite imported source with generated summaries.
+- Prefer **explicit relation tables** and readable modules over magical inference.
+
+## Status literals
+
+Use only documented statuses (see `apps/web/src/lib/status/transition-rules.ts` and `AGENT.md`). Do not invent hidden states.
+
+## Naming
+
+Lowercase-hyphen filenames where applicable; semantic names only. No `brain`, `memory-engine`, `smart-core`, or vague “AI engine” naming.
+
+## Phases
+
+Follow `docs/roadmap.md` (1–9). Implement the current phase only unless the user expands scope. After schema changes: `pnpm db:generate` and migrations as needed.
+
+## Docs
+
+Keep `docs/*.md` aligned with behavior; architectural decisions belong in docs, not only in chat.

@@ -1,0 +1,274 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sources      Source[]
+  evidence     Evidence[]
+  claims       Claim[]
+  tensions     Tension[]
+  decisions    Decision[]
+  outputs      Output[]
+  reviewEvents ReviewEvent[]
+  syncRecords  SyncRecord[]
+}
+
+model Source {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  title         String
+  sourceType    String
+  originalPath  String?
+  externalUrl   String?
+  contentHash   String
+  importedAt    DateTime @default(now())
+  extractedText String?
+  metadataJson  Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  segments  SourceSegment[]
+  evidence  Evidence[]
+
+  @@index([workspaceId])
+}
+
+model SourceSegment {
+  id           String   @id @default(cuid())
+  sourceId     String
+  segmentIndex Int
+  headingPath  String?
+  pageNumber   Int?
+  speakerLabel String?
+  startOffset  Int?
+  endOffset    Int?
+  text         String
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+
+  source   Source     @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
+
+  @@index([sourceId])
+}
+
+model Evidence {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  sourceId        String
+  sourceSegmentId String?
+  title           String?
+  text            String
+  evidenceType    String
+  confidence      Float?
+  metadataJson    Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source    Source         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  segment   SourceSegment? @relation(fields: [sourceSegmentId], references: [id], onDelete: SetNull)
+
+  claimLinks ClaimEvidence[]
+
+  @@index([workspaceId])
+  @@index([sourceId])
+}
+
+model Claim {
+  id          String   @id @default(cuid())
+  workspaceId String
+  title       String
+  claimText   String
+  claimType   String?
+  status      String
+  confidence  Float?
+  summary     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  evidenceLinks ClaimEvidence[]
+  tensionLinks  TensionClaim[]
+  decisionLinks DecisionClaim[]
+  outputLinks   OutputClaim[]
+
+  @@index([workspaceId])
+}
+
+model ClaimEvidence {
+  claimId      String
+  evidenceId   String
+  relationType String @default("supports")
+
+  claim    Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@id([claimId, evidenceId, relationType])
+}
+
+model Tension {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  description String?
+  tensionType String?
+  status      String
+  severity    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  claimLinks    TensionClaim[]
+  decisionLinks DecisionTension[]
+
+  @@index([workspaceId])
+}
+
+model TensionClaim {
+  tensionId String
+  claimId   String
+
+  tension Tension @relation(fields: [tensionId], references: [id], onDelete: Cascade)
+  claim   Claim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@id([tensionId, claimId])
+}
+
+model Decision {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  title          String
+  decisionText   String
+  rationale      String?
+  status         String
+  owner          String?
+  reviewDueAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  supersededById String?
+
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  supersededBy Decision?  @relation("DecisionSupersedes", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes   Decision[] @relation("DecisionSupersedes")
+
+  claimLinks   DecisionClaim[]
+  tensionLinks DecisionTension[]
+  outputLinks  OutputDecision[]
+
+  @@index([workspaceId])
+}
+
+model DecisionClaim {
+  decisionId String
+  claimId    String
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  claim    Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@id([decisionId, claimId])
+}
+
+model DecisionTension {
+  decisionId String
+  tensionId  String
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  tension  Tension  @relation(fields: [tensionId], references: [id], onDelete: Cascade)
+
+  @@id([decisionId, tensionId])
+}
+
+model Output {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  title          String
+  outputType     String
+  content        String
+  status         String
+  generationMode String?
+  staleStatus    String
+  staleReason    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  claimLinks    OutputClaim[]
+  decisionLinks OutputDecision[]
+
+  @@index([workspaceId])
+}
+
+model OutputClaim {
+  outputId String
+  claimId  String
+
+  output Output @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  claim  Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@id([outputId, claimId])
+}
+
+model OutputDecision {
+  outputId   String
+  decisionId String
+
+  output   Output   @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@id([outputId, decisionId])
+}
+
+model ReviewEvent {
+  id          String   @id @default(cuid())
+  workspaceId String
+  objectType  String
+  objectId    String
+  action      String
+  note        String?
+  actor       String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([objectType, objectId])
+}
+
+model SyncRecord {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  objectType     String
+  objectId       String
+  notePath       String
+  syncMode       String
+  exportHash     String?
+  importHash     String?
+  syncState      String
+  lastExportedAt DateTime?
+  lastImportedAt DateTime?
+  conflictNote   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([objectType, objectId])
+  @@index([workspaceId])
+}

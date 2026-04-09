@@ -1,0 +1,23 @@
+---
+description: Obsidian vault layout, editable blocks, sync boundaries
+globs: apps/web/src/lib/obsidian/**,vault-templates/**,docs/obsidian-sync.md,apps/web/src/app/settings/**
+alwaysApply: false
+---
+
+# Obsidian vault hybrid
+
+- **Backend owns** IDs, types, timestamps, structured links, provenance, statuses, sync metadata. **Never** merge vault frontmatter or system zones into the DB as authoritative structural updates.
+- **Write-back**: only content inside approved markers:
+
+```text
+<!-- editable:start:section-name -->
+...
+<!-- editable:end:section-name -->
+```
+
+- **Folder layout** (deterministic export): `00-dashboard`, `01-sources`, `02-evidence`, `03-claims`, `04-tensions`, `05-decisions`, `06-outputs`, `07-notes`, `08-templates`, `99-system` (see [docs/obsidian-sync.md](docs/obsidian-sync.md)).
+- **Dashboard notes**: regenerated projections — treat as **read-only** in the vault workflow.
+- **Freeform notes** (`07-notes` or equivalent): not canonical structured objects unless promoted through the app.
+- **Conflicts**: explicit state on `SyncRecord`; hash export/import payloads (see `note-fingerprint` / sync lib). Do not silently overwrite local edits.
+
+Implementation lives under [apps/web/src/lib/obsidian/](apps/web/src/lib/obsidian/); templates in [vault-templates/](vault-templates/).
